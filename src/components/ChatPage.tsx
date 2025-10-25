@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   id: string;
@@ -150,25 +151,16 @@ export const ChatPage = () => {
     setStreamingMessage("");
 
     try {
-      const response = await fetch("https://claud.share.zrok.io/webhook-test/chatbot", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      // Call our backend edge function instead of direct n8n webhook
+      const { data, error } = await supabase.functions.invoke('chat-proxy', {
+        body: {
           message: userMessage.content,
-          conversation_history: messages.map(m => ({
-            role: m.role,
-            content: m.content
-          }))
-        }),
+        }
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (error) {
+        throw new Error(error.message);
       }
-
-      const data = await response.json();
       
       // Simulate typing effect
       const aiResponse = data.response || data.message || "I received your message, but couldn't generate a proper response.";
