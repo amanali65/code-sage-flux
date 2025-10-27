@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Code2, Zap, Brain, Sparkles, MessageSquare, Github, Linkedin, Twitter, FileText } from "lucide-react";
+import { ArrowRight, Code2, Zap, Brain, Sparkles, MessageSquare, Github, Linkedin, Twitter, FileText, CheckCircle2 } from "lucide-react";
+import { Header } from "@/components/Header";
 
 export const LandingPage = () => {
   const navigate = useNavigate();
@@ -48,8 +49,9 @@ export const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
         {/* Background Glow Effects */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-glow" />
@@ -65,14 +67,29 @@ export const LandingPage = () => {
               <span className="text-sm font-medium text-accent">AI Developer Assistant</span>
             </div>
             
-            <h1 className="text-6xl md:text-8xl font-heading font-bold leading-tight">
-              Meet Your Developer{" "}
-              <span className="text-gradient">AI Assistant</span>
+            <h1 className="text-5xl md:text-7xl font-heading font-bold leading-tight">
+              Transform Your Development{" "}
+              <span className="text-gradient">With AI</span>
             </h1>
             
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-              An intelligent coding companion that thinks like a developer and helps you solve complex problems.
+              Chat with code, PDFs, and documentation. Get instant answers powered by advanced AI automation.
             </p>
+            
+            <div className="flex flex-wrap gap-4 justify-center pt-2">
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="h-5 w-5 text-accent" />
+                <span>AI-Powered Chat</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="h-5 w-5 text-accent" />
+                <span>PDF Analysis</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="h-5 w-5 text-accent" />
+                <span>Developer Tools</span>
+              </div>
+            </div>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
               <Button 

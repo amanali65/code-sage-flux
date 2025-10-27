@@ -17,6 +17,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { User as SupabaseUser } from "@supabase/supabase-js";
+import { Header } from "@/components/Header";
 
 interface Message {
   id: string;
@@ -34,6 +36,7 @@ interface ChatSession {
 
 export const ChatPage = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -43,6 +46,18 @@ export const ChatPage = () => {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Load saved chat sessions from localStorage
   useEffect(() => {
@@ -136,6 +151,12 @@ export const ChatPage = () => {
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
+    if (!user) {
+      toast.error("Please sign in to chat");
+      navigate("/auth");
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -205,7 +226,9 @@ export const ChatPage = () => {
   };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background flex-col">
+      <Header />
+      <div className="flex flex-1 overflow-hidden">
       {/* Sidebar */}
       <div 
         className={`${
@@ -398,6 +421,7 @@ export const ChatPage = () => {
             Powered by n8n automation and AI
           </p>
         </div>
+      </div>
       </div>
     </div>
   );

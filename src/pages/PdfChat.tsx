@@ -6,13 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Trash2, FileText, Send, Brain, Loader2, X } from "lucide-react";
+import { Upload, Trash2, FileText, Send, Brain, Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { Header } from "@/components/Header";
 
 interface PDF {
   id: string;
   name: string;
   uploadedAt: string;
+  fileId: string; // Unique ID for n8n operations
 }
 
 interface Message {
@@ -69,7 +71,13 @@ export const PdfChat = () => {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file) return;
+    
+    if (!user) {
+      toast.error("Please sign in to upload PDFs");
+      navigate("/auth");
+      return;
+    }
 
     if (file.type !== "application/pdf") {
       toast.error("Please upload a PDF file");
@@ -78,9 +86,11 @@ export const PdfChat = () => {
 
     setUploadLoading(true);
     try {
+      const fileId = crypto.randomUUID(); // Generate unique ID
       const formData = new FormData();
       formData.append("file", file);
       formData.append("userId", user.id);
+      formData.append("fileId", fileId);
 
       const { data, error } = await supabase.functions.invoke("pdf-upload", {
         body: formData,
@@ -89,9 +99,10 @@ export const PdfChat = () => {
       if (error) throw error;
 
       const newPdf: PDF = {
-        id: data.fileId || Date.now().toString(),
+        id: Date.now().toString(),
         name: file.name,
         uploadedAt: new Date().toISOString(),
+        fileId: fileId,
       };
 
       setPdfs([...pdfs, newPdf]);
@@ -107,11 +118,15 @@ export const PdfChat = () => {
   };
 
   const handleDeletePdf = async (pdf: PDF) => {
-    if (!user) return;
+    if (!user) {
+      toast.error("Please sign in to delete PDFs");
+      navigate("/auth");
+      return;
+    }
 
     try {
       const { error } = await supabase.functions.invoke("pdf-delete", {
-        body: { fileId: pdf.id, userId: user.id },
+        body: { fileId: pdf.fileId, userId: user.id },
       });
 
       if (error) throw error;
@@ -138,7 +153,13 @@ export const PdfChat = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!currentMessage.trim() || !selectedPdf || !user || loading) return;
+    if (!currentMessage.trim() || !selectedPdf || loading) return;
+    
+    if (!user) {
+      toast.error("Please sign in to chat with PDFs");
+      navigate("/auth");
+      return;
+    }
 
     const userMessage: Message = {
       role: "user",
@@ -164,7 +185,7 @@ export const PdfChat = () => {
     try {
       const { data, error } = await supabase.functions.invoke("pdf-chat", {
         body: {
-          fileId: selectedPdf.id,
+          fileId: selectedPdf.fileId,
           message: userMessage.content,
           userId: user.id,
         },
@@ -214,32 +235,17 @@ export const PdfChat = () => {
   const currentConv = getCurrentConversation();
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Background Glow Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-glow" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-glow" style={{ animationDelay: "1s" }} />
-      </div>
-
-      {/* Header */}
-      <div className="border-b border-border bg-background/50 backdrop-blur-sm sticky top-0 z-20">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate("/")} className="hover:bg-accent/10">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Home
-            </Button>
-            <h1 className="text-2xl font-heading font-bold">
-              PDF <span className="text-gradient">Chat</span>
-            </h1>
-          </div>
-          <Button variant="outline" onClick={handleSignOut} className="border-accent/30">
-            Sign Out
-          </Button>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header />
+      
+      <div className="flex-1 relative overflow-hidden mt-16">
+        {/* Background Glow Effects */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-glow" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-glow" style={{ animationDelay: "1s" }} />
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-8 relative z-10">
+        <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Upload Section */}
         <Card className="mb-8 glass border-accent/20">
           <CardHeader>
@@ -350,6 +356,7 @@ export const PdfChat = () => {
             <p className="text-sm text-muted-foreground">Upload a PDF to get started</p>
           </div>
         )}
+        </div>
       </div>
 
       {/* Chat Dialog */}

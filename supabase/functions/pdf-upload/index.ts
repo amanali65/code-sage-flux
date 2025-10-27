@@ -14,10 +14,11 @@ serve(async (req) => {
     const formData = await req.formData();
     const file = formData.get("file");
     const userId = formData.get("userId");
+    const fileId = formData.get("fileId");
 
-    if (!file || !userId) {
+    if (!file || !userId || !fileId) {
       return new Response(
-        JSON.stringify({ error: "File and userId are required" }),
+        JSON.stringify({ error: "File, userId, and fileId are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -26,6 +27,7 @@ serve(async (req) => {
     const webhookFormData = new FormData();
     webhookFormData.append("file", file);
     webhookFormData.append("userId", userId);
+    webhookFormData.append("fileId", fileId);
 
     const response = await fetch("https://claud.share.zrok.io/webhook-test/upload-file", {
       method: "POST",

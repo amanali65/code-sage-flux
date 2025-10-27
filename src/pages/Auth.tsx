@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Code2, Loader2 } from "lucide-react";
+import { Loader2, Code2 } from "lucide-react";
+import { Header } from "@/components/Header";
 
 export const Auth = () => {
   const navigate = useNavigate();
@@ -63,26 +64,15 @@ export const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Background Glow Effects */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-glow" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-glow" style={{ animationDelay: "1s" }} />
-      </div>
-
-      {/* Back Button */}
-      <div className="absolute top-6 left-6 z-20">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="hover:bg-accent/10"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
-        </Button>
-      </div>
-
-      <div className="min-h-screen flex items-center justify-center p-4 relative z-10">
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header />
+      
+      <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden mt-16">
+        {/* Background Glow Effects */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-glow" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse-glow" style={{ animationDelay: "1s" }} />
+        </div>
         <Card className="w-full max-w-md glass border-accent/20">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
