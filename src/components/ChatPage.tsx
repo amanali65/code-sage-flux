@@ -162,8 +162,13 @@ export const ChatPage = () => {
         throw new Error(error.message);
       }
       
+      // Extract response from n8n webhook format [{ output: "..." }]
+      let aiResponse = "I received your message, but couldn't generate a proper response.";
+      if (Array.isArray(data) && data[0]?.output) {
+        aiResponse = data[0].output;
+      }
+      
       // Simulate typing effect
-      const aiResponse = data.response || data.message || "I received your message, but couldn't generate a proper response.";
       let currentText = "";
       
       for (let i = 0; i < aiResponse.length; i++) {
@@ -313,7 +318,14 @@ export const ChatPage = () => {
                       : "bg-secondary rounded-bl-sm"
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
+                  <div 
+                    className="whitespace-pre-wrap"
+                    dangerouslySetInnerHTML={{
+                      __html: message.content
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    }}
+                  />
                 </div>
 
                 {message.role === "user" && (
@@ -331,7 +343,14 @@ export const ChatPage = () => {
                   <Brain className="h-4 w-4 text-accent animate-pulse-glow" />
                 </div>
                 <div className="max-w-[80%] p-4 rounded-2xl bg-secondary rounded-bl-sm">
-                  <p className="whitespace-pre-wrap">{streamingMessage}</p>
+                  <div 
+                    className="whitespace-pre-wrap inline"
+                    dangerouslySetInnerHTML={{
+                      __html: streamingMessage
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    }}
+                  />
                   <span className="inline-block w-1 h-4 bg-accent ml-1 animate-pulse" />
                 </div>
               </div>
