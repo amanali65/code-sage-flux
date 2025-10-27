@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Code2, Zap, Brain, Sparkles, MessageSquare, Github, Linkedin, Twitter } from "lucide-react";
+import { ArrowRight, Code2, Zap, Brain, Sparkles, MessageSquare, Github, Linkedin, Twitter, FileText } from "lucide-react";
 
 export const LandingPage = () => {
   const navigate = useNavigate();
@@ -87,8 +87,10 @@ export const LandingPage = () => {
                 size="lg" 
                 variant="outline"
                 className="border-accent/30 hover:bg-accent/5"
+                onClick={() => navigate("/pdf-chat")}
               >
-                Watch Demo
+                <FileText className="mr-2 h-5 w-5" />
+                PDF Chat
               </Button>
             </div>
 
