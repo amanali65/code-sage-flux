@@ -12,8 +12,17 @@ import {
   Home,
   MessageSquare,
   Trash2,
-  ChevronLeft
+  ChevronLeft,
+  ThumbsUp,
+  ThumbsDown,
+  Download
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -195,7 +204,7 @@ export const ChatPage = () => {
       for (let i = 0; i < aiResponse.length; i++) {
         currentText += aiResponse[i];
         setStreamingMessage(currentText);
-        await new Promise(resolve => setTimeout(resolve, 20));
+        await new Promise(resolve => setTimeout(resolve, 5));
       }
 
       const assistantMessage: Message = {
@@ -321,41 +330,113 @@ export const ChatPage = () => {
               </div>
             )}
 
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-4 ${
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                {message.role === "assistant" && (
-                  <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
-                    <Brain className="h-4 w-4 text-accent" />
-                  </div>
-                )}
-                
+            {messages.map((message, index) => (
+              <div key={message.id} className="flex flex-col gap-2">
                 <div
-                  className={`max-w-[80%] p-4 rounded-2xl ${
-                    message.role === "user"
-                      ? "bg-accent text-accent-foreground rounded-br-sm"
-                      : "bg-secondary rounded-bl-sm"
+                  className={`flex gap-4 ${
+                    message.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
-                  <div 
-                    className="whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{
-                      __html: message.content
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                    }}
-                  />
+                  {message.role === "assistant" && (
+                    <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                      <Brain className="h-4 w-4 text-accent" />
+                    </div>
+                  )}
+                  
+                  <div
+                    className={`max-w-[80%] p-4 rounded-2xl ${
+                      message.role === "user"
+                        ? "bg-accent text-accent-foreground rounded-br-sm"
+                        : "bg-secondary rounded-bl-sm"
+                    }`}
+                  >
+                    <div 
+                      className="whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{
+                        __html: message.content
+                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                      }}
+                    />
+                  </div>
+
+                  {message.role === "user" && (
+                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                      <User className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                  )}
                 </div>
 
-                {message.role === "user" && (
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                    <User className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                )}
+                {/* Action Buttons */}
+                <div className={`flex gap-2 ${message.role === "user" ? "justify-end mr-12" : "justify-start ml-12"}`}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 hover:bg-accent/10 hover:text-accent"
+                    onClick={() => toast.success("Liked!")}
+                  >
+                    <ThumbsUp className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => toast.success("Disliked!")}
+                  >
+                    <ThumbsDown className="h-3.5 w-3.5" />
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 hover:bg-accent/10 hover:text-accent"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align={message.role === "user" ? "end" : "start"}>
+                      <DropdownMenuItem onClick={() => {
+                        const blob = new Blob([message.content], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `message-${index}.txt`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        toast.success("Exported as Text!");
+                      }}>
+                        Export as Text
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        const json = JSON.stringify({ role: message.role, content: message.content }, null, 2);
+                        const blob = new Blob([json], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `message-${index}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        toast.success("Exported as JSON!");
+                      }}>
+                        Export as JSON
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        const markdown = `**${message.role}:**\n\n${message.content}`;
+                        const blob = new Blob([markdown], { type: 'text/markdown' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `message-${index}.md`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        toast.success("Exported as Markdown!");
+                      }}>
+                        Export as Markdown
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             ))}
 
