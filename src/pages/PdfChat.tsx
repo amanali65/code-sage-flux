@@ -19,6 +19,7 @@ export const PdfChat = () => {
   const [user, setUser] = useState<any>(null);
   const [pdfs, setPdfs] = useState<PDF[]>([]);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -27,6 +28,7 @@ export const PdfChat = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
+        loadPdfs(session.user.id);
       }
     });
 
@@ -35,11 +37,38 @@ export const PdfChat = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
+        loadPdfs(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const loadPdfs = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("pdfs")
+        .select("*")
+        .eq("user_id", userId)
+        .order("uploaded_at", { ascending: false });
+
+      if (error) throw error;
+
+      const loadedPdfs: PDF[] = data.map((pdf) => ({
+        id: pdf.id,
+        name: pdf.name,
+        uploadedAt: pdf.uploaded_at,
+        fileId: pdf.file_id,
+      }));
+
+      setPdfs(loadedPdfs);
+    } catch (error: any) {
+      console.error("Error loading PDFs:", error);
+      toast.error("Failed to load PDFs");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -70,14 +99,27 @@ export const PdfChat = () => {
 
       if (error) throw error;
 
+      // Save to Supabase database
+      const { data: pdfData, error: dbError } = await supabase
+        .from("pdfs")
+        .insert({
+          user_id: user.id,
+          file_id: fileId,
+          name: file.name,
+        })
+        .select()
+        .single();
+
+      if (dbError) throw dbError;
+
       const newPdf: PDF = {
-        id: Date.now().toString(),
-        name: file.name,
-        uploadedAt: new Date().toISOString(),
-        fileId: fileId,
+        id: pdfData.id,
+        name: pdfData.name,
+        uploadedAt: pdfData.uploaded_at,
+        fileId: pdfData.file_id,
       };
 
-      setPdfs([...pdfs, newPdf]);
+      setPdfs([newPdf, ...pdfs]);
       toast.success("PDF uploaded successfully!");
     } catch (error: any) {
       toast.error(error.message || "Failed to upload PDF");
@@ -89,9 +131,21 @@ export const PdfChat = () => {
     }
   };
 
-  const handleDeletePdf = (pdf: PDF) => {
-    setPdfs(pdfs.filter((p) => p.id !== pdf.id));
-    toast.success("PDF removed from list!");
+  const handleDeletePdf = async (pdf: PDF) => {
+    try {
+      const { error } = await supabase
+        .from("pdfs")
+        .delete()
+        .eq("id", pdf.id);
+
+      if (error) throw error;
+
+      setPdfs(pdfs.filter((p) => p.id !== pdf.id));
+      toast.success("PDF deleted successfully!");
+    } catch (error: any) {
+      console.error("Error deleting PDF:", error);
+      toast.error("Failed to delete PDF");
+    }
   };
 
   return (
@@ -109,10 +163,10 @@ export const PdfChat = () => {
           {/* Header Section */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
-              PDF Knowledge Base
+              Document Library
             </h1>
             <p className="text-lg text-muted-foreground mb-8">
-              Upload your PDFs and chat with your documents using AI
+              Manage your PDF documents for AI-powered conversations
             </p>
             
             {/* Action Buttons */}
@@ -145,19 +199,24 @@ export const PdfChat = () => {
               </Button>
               
               <Button
-                onClick={() => navigate("/chat")}
+                onClick={() => navigate("/pdf-chat-conversation")}
                 size="lg"
                 variant="outline"
                 className="border-accent/30 hover:bg-accent/10 px-8"
+                disabled={pdfs.length === 0}
               >
                 <MessageSquare className="mr-2 h-5 w-5" />
-                Chat with All Documents
+                Start Chatting
               </Button>
             </div>
           </div>
 
           {/* PDFs Grid */}
-          {pdfs.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-20">
+              <Loader2 className="h-12 w-12 animate-spin text-accent mx-auto" />
+            </div>
+          ) : pdfs.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {pdfs.map((pdf) => (
                 <Card

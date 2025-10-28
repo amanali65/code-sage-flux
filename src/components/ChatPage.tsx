@@ -28,6 +28,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import { Header } from "@/components/Header";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Message {
   id: string;
@@ -350,14 +352,15 @@ export const ChatPage = () => {
                         : "bg-secondary rounded-bl-sm"
                     }`}
                   >
-                    <div 
-                      className="whitespace-pre-wrap"
-                      dangerouslySetInnerHTML={{
-                        __html: message.content
-                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                          .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                      }}
-                    />
+                    {message.role === "assistant" ? (
+                      <div className="text-sm prose prose-sm max-w-none dark:prose-invert prose-pre:bg-muted prose-pre:text-foreground">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <div className="whitespace-pre-wrap">{message.content}</div>
+                    )}
                   </div>
 
                   {message.role === "user" && (
@@ -367,76 +370,78 @@ export const ChatPage = () => {
                   )}
                 </div>
 
-                {/* Action Buttons */}
-                <div className={`flex gap-2 ${message.role === "user" ? "justify-end mr-12" : "justify-start ml-12"}`}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 hover:bg-accent/10 hover:text-accent"
-                    onClick={() => toast.success("Liked!")}
-                  >
-                    <ThumbsUp className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => toast.success("Disliked!")}
-                  >
-                    <ThumbsDown className="h-3.5 w-3.5" />
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 hover:bg-accent/10 hover:text-accent"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align={message.role === "user" ? "end" : "start"}>
-                      <DropdownMenuItem onClick={() => {
-                        const blob = new Blob([message.content], { type: 'text/plain' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `message-${index}.txt`;
-                        a.click();
-                        URL.revokeObjectURL(url);
-                        toast.success("Exported as Text!");
-                      }}>
-                        Export as Text
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        const json = JSON.stringify({ role: message.role, content: message.content }, null, 2);
-                        const blob = new Blob([json], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `message-${index}.json`;
-                        a.click();
-                        URL.revokeObjectURL(url);
-                        toast.success("Exported as JSON!");
-                      }}>
-                        Export as JSON
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        const markdown = `**${message.role}:**\n\n${message.content}`;
-                        const blob = new Blob([markdown], { type: 'text/markdown' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `message-${index}.md`;
-                        a.click();
-                        URL.revokeObjectURL(url);
-                        toast.success("Exported as Markdown!");
-                      }}>
-                        Export as Markdown
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                {/* Action Buttons - Only for assistant messages */}
+                {message.role === "assistant" && (
+                  <div className="flex gap-2 justify-start ml-12">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 hover:bg-accent/10 hover:text-accent"
+                      onClick={() => toast.success("Liked!")}
+                    >
+                      <ThumbsUp className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => toast.success("Disliked!")}
+                    >
+                      <ThumbsDown className="h-3.5 w-3.5" />
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 hover:bg-accent/10 hover:text-accent"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuItem onClick={() => {
+                          const blob = new Blob([message.content], { type: 'text/plain' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `message-${index}.txt`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                          toast.success("Exported as Text!");
+                        }}>
+                          Export as Text
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          const json = JSON.stringify({ role: message.role, content: message.content }, null, 2);
+                          const blob = new Blob([json], { type: 'application/json' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `message-${index}.json`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                          toast.success("Exported as JSON!");
+                        }}>
+                          Export as JSON
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          const markdown = `**${message.role}:**\n\n${message.content}`;
+                          const blob = new Blob([markdown], { type: 'text/markdown' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `message-${index}.md`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                          toast.success("Exported as Markdown!");
+                        }}>
+                          Export as Markdown
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
               </div>
             ))}
 
@@ -447,14 +452,11 @@ export const ChatPage = () => {
                   <Brain className="h-4 w-4 text-accent animate-pulse-glow" />
                 </div>
                 <div className="max-w-[80%] p-4 rounded-2xl bg-secondary rounded-bl-sm">
-                  <div 
-                    className="whitespace-pre-wrap inline"
-                    dangerouslySetInnerHTML={{
-                      __html: streamingMessage
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                    }}
-                  />
+                  <div className="text-sm prose prose-sm max-w-none dark:prose-invert prose-pre:bg-muted prose-pre:text-foreground inline">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {streamingMessage}
+                    </ReactMarkdown>
+                  </div>
                   <span className="inline-block w-1 h-4 bg-accent ml-1 animate-pulse" />
                 </div>
               </div>

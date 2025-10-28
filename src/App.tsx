@@ -8,6 +8,7 @@ import { ChatPage } from "./components/ChatPage";
 import NotFound from "./pages/NotFound";
 import { Auth } from "./pages/Auth";
 import { PdfChat } from "./pages/PdfChat";
+import { PdfChatConversation } from "./pages/PdfChatConversation";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/pdf-chat" element={<PdfChat />} />
+          <Route path="/pdf-chat-conversation" element={<PdfChatConversation />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

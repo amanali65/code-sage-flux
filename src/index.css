@@ -102,6 +102,19 @@ All colors MUST be HSL.
     border-right: 2px solid hsl(var(--accent));
     animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
   }
+  
+  /* Markdown prose styling */
+  .prose pre {
+    @apply rounded-lg p-4 overflow-x-auto;
+  }
+  
+  .prose code {
+    @apply text-sm font-mono;
+  }
+  
+  .prose pre code {
+    @apply bg-transparent p-0;
+  }
 }
 
 @keyframes float {
