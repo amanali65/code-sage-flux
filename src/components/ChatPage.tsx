@@ -30,6 +30,7 @@ import { User as SupabaseUser } from "@supabase/supabase-js";
 import { Header } from "@/components/Header";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Message {
   id: string;
@@ -47,6 +48,7 @@ interface ChatSession {
 
 export const ChatPage = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -57,6 +59,12 @@ export const ChatPage = () => {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -239,11 +247,21 @@ export const ChatPage = () => {
   return (
     <div className="flex h-screen bg-background flex-col">
       <Header />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+      {/* Mobile Overlay */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="absolute inset-0 bg-black/50 z-30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
       {/* Sidebar */}
       <div 
         className={`${
-          sidebarOpen ? "w-64" : "w-0"
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } ${
+          isMobile ? 'absolute inset-y-0 left-0 z-40 w-64' : 'relative w-64'
         } transition-all duration-300 border-r border-border bg-white overflow-hidden flex flex-col`}
       >
         <div className="p-4 border-b border-border">

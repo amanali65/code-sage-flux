@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Send, FileText, ThumbsUp, ThumbsDown, Download, Loader2 } from "lucide-react";
+import { Send, FileText, ThumbsUp, ThumbsDown, Download, Loader2, Menu, X } from "lucide-react";
 import { Header } from "@/components/Header";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Message {
   role: "user" | "assistant";
@@ -35,7 +36,17 @@ export const PdfChatConversation = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [pdfs, setPdfs] = useState<PDF[]>([]);
+  const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
+  const isMobile = useIsMobile();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isMobile) {
+      setLeftSidebarOpen(false);
+      setRightSidebarOpen(false);
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -169,9 +180,49 @@ export const PdfChatConversation = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
       
-      <div className="flex-1 flex mt-16 overflow-hidden">
+      <div className="flex-1 flex mt-16 overflow-hidden relative">
+        {/* Mobile Overlays */}
+        {isMobile && leftSidebarOpen && (
+          <div 
+            className="absolute inset-0 bg-black/50 z-30"
+            onClick={() => setLeftSidebarOpen(false)}
+          />
+        )}
+        {isMobile && rightSidebarOpen && (
+          <div 
+            className="absolute inset-0 bg-black/50 z-30"
+            onClick={() => setRightSidebarOpen(false)}
+          />
+        )}
+
+        {/* Mobile Menu Toggles */}
+        {isMobile && (
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 left-4 z-50"
+              onClick={() => setLeftSidebarOpen(!leftSidebarOpen)}
+            >
+              {leftSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-4 right-4 z-50"
+              onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
+            >
+              <FileText className="h-5 w-5" />
+            </Button>
+          </>
+        )}
+
         {/* Left Sidebar - Conversations */}
-        <div className="w-64 border-r border-border bg-muted/30 p-4">
+        <div className={`${
+          leftSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } ${
+          isMobile ? 'absolute inset-y-0 left-0 z-40 w-64' : 'relative w-64'
+        } transition-transform duration-300 border-r border-border bg-muted/30 p-4`}>
           <h2 className="text-lg font-semibold mb-4">Conversations</h2>
           <ScrollArea className="h-[calc(100vh-12rem)]">
             <div className="space-y-2">
@@ -190,7 +241,7 @@ export const PdfChatConversation = () => {
         </div>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col w-full">
           {/* Messages */}
           <ScrollArea className="flex-1 p-6">
             <div className="max-w-4xl mx-auto">
@@ -313,7 +364,11 @@ export const PdfChatConversation = () => {
         </div>
 
         {/* Right Sidebar - PDFs */}
-        <div className="w-64 border-l border-border bg-muted/30 p-4">
+        <div className={`${
+          rightSidebarOpen ? 'translate-x-0' : 'translate-x-full'
+        } ${
+          isMobile ? 'absolute inset-y-0 right-0 z-40 w-64' : 'relative w-64'
+        } transition-transform duration-300 border-l border-border bg-muted/30 p-4`}>
           <h2 className="text-lg font-semibold mb-4">Documents ({pdfs.length})</h2>
           <ScrollArea className="h-[calc(100vh-12rem)]">
             <div className="space-y-2">

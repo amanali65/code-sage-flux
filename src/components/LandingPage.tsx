@@ -63,7 +63,7 @@ export const LandingPage = () => {
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-in">
-            <div className="inline-block px-4 py-2 bg-accent/10 rounded-full border border-accent/20 mb-4">
+            <div className="inline-block px-4 py-2 bg-accent/10 rounded-full border border-accent/20 mb-4 mt-2.5">
               <span className="text-sm font-medium text-accent">AI Developer Assistant</span>
             </div>
             

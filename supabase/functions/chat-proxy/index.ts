@@ -18,7 +18,7 @@ serve(async (req) => {
     console.log('Message received:', message);
 
     // Call the n8n webhook
-    const n8nResponse = await fetch('https://claud.share.zrok.io/webhook/chatbot', {
+    const n8nResponse = await fetch('https://claud.share.zrok.io/webhook-test/chatbot', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
