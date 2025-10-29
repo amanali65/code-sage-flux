@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      pdf_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          file_ids: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          file_ids: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          file_ids?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pdfs: {
         Row: {
           file_id: string

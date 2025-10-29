@@ -58,6 +58,7 @@ export const PdfChatConversation = () => {
       } else {
         setUser(session.user);
         loadPdfs(session.user.id);
+        loadMessages(session.user.id);
       }
     });
 
@@ -67,6 +68,7 @@ export const PdfChatConversation = () => {
       } else {
         setUser(session.user);
         loadPdfs(session.user.id);
+        loadMessages(session.user.id);
       }
     });
 
@@ -93,6 +95,39 @@ export const PdfChatConversation = () => {
     } catch (error: any) {
       console.error("Error loading PDFs:", error);
       toast.error("Failed to load PDFs");
+    }
+  };
+
+  const loadMessages = async (userId: string) => {
+    try {
+      const { data: pdfData } = await supabase
+        .from("pdfs")
+        .select("file_id")
+        .eq("user_id", userId)
+        .order("uploaded_at", { ascending: false });
+
+      if (!pdfData || pdfData.length === 0) return;
+
+      const fileIds = pdfData.map(p => p.file_id).join(",");
+
+      const { data, error } = await supabase
+        .from("pdf_chat_messages")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("file_ids", fileIds)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const loadedMessages: Message[] = data.map((msg) => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+        }));
+        setMessages(loadedMessages);
+      }
+    } catch (error: any) {
+      console.error("Error loading messages:", error);
     }
   };
 
@@ -146,23 +181,26 @@ export const PdfChatConversation = () => {
     try {
       // Get all fileIds from uploaded PDFs
       const fileIds = pdfs.map(pdf => pdf.fileId);
+      const fileIdsStr = fileIds.join(",");
 
-      const res = await fetch("https://claud.share.zrok.io/webhook-test/chat-file", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileId: fileIds.join(","), // Send all fileIds
-          message: userMessage,
-          userId: user.id,
-        }),
+      // Save user message to database
+      await supabase.from("pdf_chat_messages").insert({
+        user_id: user.id,
+        file_ids: fileIdsStr,
+        role: "user",
+        content: userMessage,
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Failed to chat with webhook");
-      }
+      // Call edge function which handles CORS properly
+      const { data, error } = await supabase.functions.invoke("pdf-chat", {
+        body: {
+          fileId: fileIdsStr,
+          message: userMessage,
+          userId: user.id,
+        },
+      });
 
-      const data = await res.json();
+      if (error) throw error;
 
       const response = data?.[0]?.output || data?.output || "Sorry, I couldn't process that.";
 
@@ -172,6 +210,14 @@ export const PdfChatConversation = () => {
       ]);
 
       await typeMessage(response);
+
+      // Save assistant response to database
+      await supabase.from("pdf_chat_messages").insert({
+        user_id: user.id,
+        file_ids: fileIdsStr,
+        role: "assistant",
+        content: response,
+      });
     } catch (error: any) {
       toast.error(error.message || "Failed to send message");
       setMessages((prev) => [
