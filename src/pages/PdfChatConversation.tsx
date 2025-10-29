@@ -45,6 +45,9 @@ export const PdfChatConversation = () => {
     if (isMobile) {
       setLeftSidebarOpen(false);
       setRightSidebarOpen(false);
+    } else {
+      setLeftSidebarOpen(true);
+      setRightSidebarOpen(true);
     }
   }, [isMobile]);
 
@@ -144,15 +147,22 @@ export const PdfChatConversation = () => {
       // Get all fileIds from uploaded PDFs
       const fileIds = pdfs.map(pdf => pdf.fileId);
 
-      const { data, error } = await supabase.functions.invoke("pdf-chat", {
-        body: {
+      const res = await fetch("https://claud.share.zrok.io/webhook-test/chat-file", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           fileId: fileIds.join(","), // Send all fileIds
           message: userMessage,
           userId: user.id,
-        },
+        }),
       });
 
-      if (error) throw error;
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Failed to chat with webhook");
+      }
+
+      const data = await res.json();
 
       const response = data?.[0]?.output || data?.output || "Sorry, I couldn't process that.";
 
@@ -218,11 +228,7 @@ export const PdfChatConversation = () => {
         )}
 
         {/* Left Sidebar - Conversations */}
-        <div className={`${
-          leftSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } ${
-          isMobile ? 'absolute inset-y-0 left-0 z-40 w-64' : 'relative w-64'
-        } transition-transform duration-300 border-r border-border bg-muted/30 p-4`}>
+        <div className={`${isMobile ? (leftSidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'} ${isMobile ? 'absolute inset-y-0 left-0 z-40 w-64' : 'relative w-64'} transition-transform duration-300 border-r border-border bg-muted/30 p-4`}>
           <h2 className="text-lg font-semibold mb-4">Conversations</h2>
           <ScrollArea className="h-[calc(100vh-12rem)]">
             <div className="space-y-2">
@@ -364,11 +370,7 @@ export const PdfChatConversation = () => {
         </div>
 
         {/* Right Sidebar - PDFs */}
-        <div className={`${
-          rightSidebarOpen ? 'translate-x-0' : 'translate-x-full'
-        } ${
-          isMobile ? 'absolute inset-y-0 right-0 z-40 w-64' : 'relative w-64'
-        } transition-transform duration-300 border-l border-border bg-muted/30 p-4`}>
+        <div className={`${isMobile ? (rightSidebarOpen ? 'translate-x-0' : 'translate-x-full') : 'translate-x-0'} ${isMobile ? 'absolute inset-y-0 right-0 z-40 w-64' : 'relative w-64'} transition-transform duration-300 border-l border-border bg-muted/30 p-4`}>
           <h2 className="text-lg font-semibold mb-4">Documents ({pdfs.length})</h2>
           <ScrollArea className="h-[calc(100vh-12rem)]">
             <div className="space-y-2">
